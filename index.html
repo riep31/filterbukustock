@@ -256,7 +256,7 @@
             z-index: 100;
             background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 2fr 1fr 1fr 1fr;
+            grid-template-columns: 80px 2fr 1fr 1fr 1fr 1fr 2fr 1fr 1fr 1fr;
             gap: 1px;
         }
 
@@ -276,7 +276,7 @@
 
         .table-row {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 2fr 1fr 1fr 1fr;
+            grid-template-columns: 80px 2fr 1fr 1fr 1fr 1fr 2fr 1fr 1fr 1fr;
             gap: 1px;
             background: #f8f9fa;
             transition: background-color 0.2s ease;
@@ -405,7 +405,7 @@
             
             .table-header,
             .table-row {
-                grid-template-columns: repeat(9, minmax(120px, 1fr));
+                grid-template-columns: 60px repeat(9, minmax(120px, 1fr));
                 font-size: 14px;
             }
             
@@ -499,6 +499,7 @@
             <div class="virtual-table-container" id="tableContainer">
                 <div class="virtual-table">
                     <div class="table-header">
+                        <div class="header-cell">No</div>
                         <div class="header-cell">Deskripsi Item</div>
                         <div class="header-cell">Tanggal</div>
                         <div class="header-cell">No. Sumber</div>
@@ -641,6 +642,7 @@
                 }
                 
                 const data = [];
+                let cumulativeSaldo = 0; // Saldo kumulatif mulai dari 0
                 
                 // Skip header row (index 0)
                 for (let i = 1; i < lines.length; i++) {
@@ -649,17 +651,24 @@
                     
                     const columns = parseCSVLine(line);
                     
-                    if (columns.length >= 9) {
+                    if (columns.length >= 8) { // Sekarang minimal 8 kolom (tanpa saldo akhir dari CSV)
+                        const ktsMasuk = parseFloat(columns[6]) || 0;
+                        const ktsKeluar = parseFloat(columns[7]) || 0;
+                        
+                        // Hitung saldo akhir: saldo sebelumnya + masuk - keluar
+                        cumulativeSaldo = cumulativeSaldo + ktsMasuk - ktsKeluar;
+                        
                         const row = {
-                            deskripsi: columns[0] || '',
-                            tanggal: columns[1] || '',
-                            noSumber: columns[2] || '',
-                            tipe: columns[3] || '',
-                            kodeProd: columns[4] || '',
-                            keterangan: columns[5] || '',
-                            ktsMasuk: columns[6] || '0',
-                            ktsKeluar: columns[7] || '0',
-                            saldoAkhir: columns[8] || '0'
+                            id7: columns[0] || '', // ID7 dari Google Sheets
+                            deskripsi: columns[1] || '',
+                            tanggal: columns[2] || '',
+                            noSumber: columns[3] || '',
+                            tipe: columns[4] || '',
+                            kodeProd: columns[5] || '',
+                            keterangan: columns[6] || '',
+                            ktsMasuk: ktsMasuk,
+                            ktsKeluar: ktsKeluar,
+                            saldoAkhir: cumulativeSaldo // Saldo kumulatif yang dihitung
                         };
                         
                         data.push(row);
@@ -778,15 +787,19 @@
                 return;
             }
 
-            tbody.innerHTML = pageData.map(item => {
+            tbody.innerHTML = pageData.map((item, index) => {
                 let deskripsi = item.deskripsi;
                 if (highlightTerm) {
                     const regex = new RegExp(`(${highlightTerm})`, 'gi');
                     deskripsi = deskripsi.replace(regex, '<span class="highlight">$1</span>');
                 }
+                
+                // Nomor urut berdasarkan halaman dan index
+                const nomorUrut = startIndex + index + 1;
 
                 return `
                     <div class="table-row">
+                        <div class="table-cell number-cell">${nomorUrut}</div>
                         <div class="table-cell">${deskripsi}</div>
                         <div class="table-cell date-cell">${formatDate(item.tanggal)}</div>
                         <div class="table-cell">${item.noSumber}</div>
@@ -801,7 +814,11 @@
                         <div class="table-cell">${item.keterangan}</div>
                         <div class="table-cell number-cell">${formatNumber(item.ktsMasuk)}</div>
                         <div class="table-cell number-cell">${formatNumber(item.ktsKeluar)}</div>
-                        <div class="table-cell number-cell"><strong>${formatNumber(item.saldoAkhir)}</strong></div>
+                        <div class="table-cell number-cell">
+                            <strong style="color: ${item.saldoAkhir >= 0 ? '#27ae60' : '#e74c3c'}">
+                                ${formatNumber(item.saldoAkhir)}
+                            </strong>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -860,7 +877,8 @@
         }
 
         function formatNumber(value) {
-            if (!value || value === '0') return '-';
+            if (value === 0) return '0';
+            if (!value) return '-';
             return parseFloat(value).toLocaleString('id-ID');
         }
 
