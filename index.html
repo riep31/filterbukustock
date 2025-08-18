@@ -1,60 +1,4 @@
-// Add deployment and debug info
-        function addDeploymentInfo() {
-            const now = new Date();
-            const deployTime = now.toLocaleString('id-ID');
-            
-            // Add debug info to footer
-            const debugInfo = document.createElement('div');
-            debugInfo.style.cssText = `
-                position: fixed;
-                bottom: 10px;
-                left: 10px;
-                background: rgba(0,0,0,0.7);
-                color: white;
-                padding: 8px 12px;
-                border-radius: 15px;
-                font-size: 11px;
-                font-family: monospace;
-                z-index: 1000;
-                max-width: 300px;
-            `;
-            
-            debugInfo.innerHTML = `
-                📊 Stock System v2.0<br>
-                🕐 Loaded: ${deployTime}<br>
-                🔗 Sheets: ${DEFAULT_SHEETS_URL ? '✅ Set' : '❌ Not set'}<br>
-                🌐 Location: ${window.location.hostname}
-            `;
-            
-            document.body.appendChild(debugInfo);
-            
-            // Hide after 10 seconds
-            setTimeout(() => {
-                debugInfo.style.opacity = '0.3';
-            }, 10000);
-        }
-        
-        // Debug function untuk troubleshooting
-        function debugInfo() {
-            console.log('=== DEBUG INFO ===');
-            console.log('DEFAULT_SHEETS_URL:', DEFAULT_SHEETS_URL);
-            console.log('AUTO_HIDE_CONFIG:', AUTO_HIDE_CONFIG);
-            console.log('Current URL:', window.location.href);
-            console.log('Is connected:', isConnected);
-            console.log('Data count:', allData.length);
-            console.log('Filtered count:', filteredData.length);
-            
-            return {
-                defaultUrl: DEFAULT_SHEETS_URL,
-                autoHide: AUTO_HIDE_CONFIG,
-                connected: isConnected,
-                dataCount: allData.length,
-                filteredCount: filteredData.length
-            };
-        }
-        
-        // Expose debug function globally
-        window.debugStockSystem = debugInfo;<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -405,46 +349,31 @@
             border-radius: 3px;
         }
 
-        .config-help {
-            background: rgba(52, 152, 219, 0.1);
-            padding: 20px;
+        .error-message {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+            padding: 15px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin: 10px 0;
+            border-left: 4px solid #e74c3c;
         }
 
-        .config-help h3 {
-            color: #2c3e50;
-            margin-bottom: 10px;
+        .info-message {
+            background: rgba(52, 152, 219, 0.1);
+            color: #2980b9;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #3498db;
         }
 
-        .config-help ol {
-            margin-left: 20px;
-            line-height: 1.6;
-        }
-
-        .config-help code {
-            background: #f8f9fa;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
-        }
-
-        .scroll-indicator {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 6px;
-            background: rgba(0, 0, 0, 0.1);
-            border-radius: 3px;
-            height: 200px;
-        }
-
-        .scroll-thumb {
-            width: 100%;
-            background: #3498db;
-            border-radius: 3px;
-            transition: all 0.2s ease;
+        .success-message {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #2ecc71;
         }
 
         @media (max-width: 768px) {
@@ -485,32 +414,9 @@
                 padding: 10px 8px;
             }
         }
-
-        .error-message {
-            background: rgba(231, 76, 60, 0.1);
-            color: #e74c3c;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
-            border-left: 4px solid #e74c3c;
-        }
-
-        .info-message {
-            background: rgba(52, 152, 219, 0.1);
-            color: #2980b9;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
-            border-left: 4px solid #3498db;
-        }
     </style>
 </head>
 <body>
-    <!-- GitHub Link -->
-    <a href="#" class="github-link" id="githubLink" target="_blank" style="display: none;">
-        📁 View on GitHub
-    </a>
-
     <div class="container">
         <div class="header">
             <h1>📊 Sistem Pencarian Data Stok</h1>
@@ -615,6 +521,12 @@
     </div>
 
     <script>
+        // ========================================
+        // 🔧 KONFIGURASI GOOGLE SHEETS
+        // ========================================
+        // GANTI URL DI BAWAH INI DENGAN URL GOOGLE SHEETS ANDA
+        const DEFAULT_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/1AwPzVONLkr-GXigtHBGPPXE8XwZdwPXw69g7XSp5FdY/export?format=csv&gid=0';
+        
         // Global variables
         let allData = [];
         let filteredData = [];
@@ -641,63 +553,54 @@
             }
         }
 
-        // ========================================
-        // 🔧 KONFIGURASI GOOGLE SHEETS
-        // ========================================
-        // GANTI URL DI BAWAH INI DENGAN URL GOOGLE SHEETS ANDA
-        // Format: https://docs.google.com/spreadsheets/d/SHEET_ID/export?format=csv&gid=0
-        
-        const DEFAULT_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/1AwPzVONLkr-GXigtHBGPPXE8XwZdwPXw69g7XSp5FdY/export?format=csv&gid=0';
-        
-        // Contoh:
-        // const DEFAULT_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/export?format=csv&gid=0';
-        
-        // Auto-load akan aktif jika DEFAULT_SHEETS_URL diisi
-        // ========================================
-
         async function loadDataFromSheets() {
             showLoading();
             updateConnectionStatus('connecting');
             
             try {
-                // Multiple CORS proxy options - akan mencoba satu per satu
-                const proxyOptions = [
-                    'https://api.allorigins.win/raw?url=',
-                    'https://cors.io/?',
-                    'https://thingproxy.freeboard.io/fetch/',
-                    'https://cors-anywhere.herokuapp.com/'
-                ];
+                console.log('🔗 Mencoba koneksi ke:', sheetsUrl);
                 
+                // Coba langsung tanpa proxy dulu
                 let response;
-                let lastError;
+                let csvText;
                 
-                // Coba setiap proxy sampai berhasil
-                for (const proxyUrl of proxyOptions) {
-                    try {
-                        const url = proxyUrl.includes('allorigins') ? 
-                            proxyUrl + encodeURIComponent(sheetsUrl) : 
-                            proxyUrl + sheetsUrl;
-                        
-                        response = await fetch(url);
-                        
-                        if (response.ok) {
-                            break; // Berhasil, keluar dari loop
-                        }
-                    } catch (error) {
-                        lastError = error;
-                        continue; // Coba proxy berikutnya
+                try {
+                    console.log('📡 Mencoba akses langsung...');
+                    response = await fetch(sheetsUrl);
+                    
+                    if (response.ok) {
+                        csvText = await response.text();
+                        console.log('✅ Berhasil akses langsung');
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
                     }
+                } catch (directError) {
+                    console.log('❌ Akses langsung gagal, mencoba dengan proxy...');
+                    
+                    // Gunakan proxy jika akses langsung gagal
+                    const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(sheetsUrl);
+                    response = await fetch(proxyUrl);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Proxy request failed: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    csvText = await response.text();
+                    console.log('✅ Berhasil dengan proxy');
                 }
                 
-                if (!response || !response.ok) {
-                    throw lastError || new Error(`HTTP error! status: ${response?.status || 'Network Error'}`);
+                console.log('📊 Data received, length:', csvText.length);
+                console.log('📄 First 200 chars:', csvText.substring(0, 200));
+                
+                if (!csvText || csvText.trim().length === 0) {
+                    throw new Error('Data CSV kosong atau tidak valid');
                 }
                 
-                const csvText = await response.text();
                 const parsedData = parseCSV(csvText);
+                console.log('🔢 Parsed records:', parsedData.length);
                 
                 if (parsedData.length === 0) {
-                    throw new Error('Tidak ada data ditemukan atau format CSV tidak valid');
+                    throw new Error('Tidak ada data valid yang dapat diparsing dari CSV');
                 }
 
                 allData = parsedData;
@@ -708,53 +611,76 @@
                 updatePagination();
                 displayCurrentPage();
                 
-                showMessage(`Berhasil terhubung! ${allData.length} record dimuat.`, 'success');
+                showMessage(`✅ Berhasil terhubung! ${allData.length} record dimuat.`, 'success');
                 hideConfigSection();
                 
             } catch (error) {
+                console.error('❌ Error loading data:', error);
                 updateConnectionStatus('error');
                 document.getElementById('retryBtn').style.display = 'inline-block';
                 
-                showMessage(`Gagal terhubung: ${error.message}. 
-
-Solusi yang bisa dicoba:
-1. Pastikan Google Sheets sudah di-publish ke web dalam format CSV
-2. Pastikan sheet dapat diakses publik  
-3. Coba klik tombol "Coba Lagi"
-4. Cek browser console (F12) untuk error detail
-
-Tips: Akses https://cors-anywhere.herokuapp.com/corsdemo untuk aktivasi CORS proxy`, 'error');
-                console.error('Error loading data:', error);
+                let errorMsg = `❌ Gagal terhubung: ${error.message}\n\n`;
+                errorMsg += `🔧 Solusi yang bisa dicoba:\n`;
+                errorMsg += `1. Pastikan URL Google Sheets benar\n`;
+                errorMsg += `2. Pastikan sheet dapat diakses publik\n`;
+                errorMsg += `3. Pastikan format export adalah CSV\n`;
+                errorMsg += `4. Coba refresh halaman\n`;
+                errorMsg += `5. Cek browser console (F12) untuk detail error`;
+                
+                showMessage(errorMsg, 'error');
             }
         }
 
         function parseCSV(csvText) {
-            const lines = csvText.split('\n').filter(line => line.trim());
-            const data = [];
-            
-            // Skip header row
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
+            try {
+                const lines = csvText.split('\n').filter(line => line.trim());
+                console.log('📏 Total lines:', lines.length);
                 
-                const columns = parseCSVLine(line);
-                
-                if (columns.length >= 9) {
-                    data.push({
-                        deskripsi: columns[0] || '',
-                        tanggal: columns[1] || '',
-                        noSumber: columns[2] || '',
-                        tipe: columns[3] || '',
-                        kodeProd: columns[4] || '',
-                        keterangan: columns[5] || '',
-                        ktsMasuk: columns[6] || '0',
-                        ktsKeluar: columns[7] || '0',
-                        saldoAkhir: columns[8] || '0'
-                    });
+                if (lines.length < 2) {
+                    throw new Error('CSV harus memiliki minimal header dan 1 data row');
                 }
+                
+                const data = [];
+                
+                // Skip header row (index 0)
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    const columns = parseCSVLine(line);
+                    
+                    if (columns.length >= 9) {
+                        const row = {
+                            deskripsi: columns[0] || '',
+                            tanggal: columns[1] || '',
+                            noSumber: columns[2] || '',
+                            tipe: columns[3] || '',
+                            kodeProd: columns[4] || '',
+                            keterangan: columns[5] || '',
+                            ktsMasuk: columns[6] || '0',
+                            ktsKeluar: columns[7] || '0',
+                            saldoAkhir: columns[8] || '0'
+                        };
+                        
+                        data.push(row);
+                    } else {
+                        console.warn(`⚠️ Row ${i} has insufficient columns (${columns.length}):`, columns);
+                    }
+                }
+                
+                console.log('✅ Successfully parsed', data.length, 'records');
+                
+                // Log sample data
+                if (data.length > 0) {
+                    console.log('📝 Sample record:', data[0]);
+                }
+                
+                return data;
+                
+            } catch (error) {
+                console.error('❌ CSV Parsing error:', error);
+                throw new Error(`CSV parsing failed: ${error.message}`);
             }
-            
-            return data;
         }
 
         function parseCSVLine(line) {
@@ -964,20 +890,21 @@ Tips: Akses https://cors-anywhere.herokuapp.com/corsdemo untuk aktivasi CORS pro
             
             container.innerHTML = `
                 <div class="${className}">
-                    ${message}
+                    ${message.replace(/\n/g, '<br>')}
                 </div>
             `;
             
-            // Auto-hide setelah 10 detik untuk pesan info
-            if (type === 'info') {
+            // Auto-hide setelah beberapa detik
+            if (type === 'success') {
                 setTimeout(() => {
                     container.innerHTML = '';
-                }, 10000);
-            } else {
+                }, 5000);
+            } else if (type === 'info') {
                 setTimeout(() => {
                     container.innerHTML = '';
                 }, 8000);
             }
+            // Error messages tidak auto-hide
         }
 
         function updateConnectionStatus(status) {
@@ -1010,7 +937,7 @@ Tips: Akses https://cors-anywhere.herokuapp.com/corsdemo untuk aktivasi CORS pro
         }
 
         function hideConfigSection() {
-            document.getElementById('configSection').style.display = 'none';
+            document.getElementById('configSection').classList.add('hidden');
         }
 
         // Event listeners
@@ -1057,35 +984,97 @@ Tips: Akses https://cors-anywhere.herokuapp.com/corsdemo untuk aktivasi CORS pro
         // Auto-refresh data every 5 minutes
         setInterval(() => {
             if (isConnected && sheetsUrl) {
-                console.log('Auto-refreshing data...');
+                console.log('🔄 Auto-refreshing data...');
                 loadDataFromSheets();
             }
         }, 5 * 60 * 1000);
 
+        // Debug functions
+        function addDeploymentInfo() {
+            const now = new Date();
+            const deployTime = now.toLocaleString('id-ID');
+            
+            // Add debug info to footer
+            const debugInfo = document.createElement('div');
+            debugInfo.style.cssText = `
+                position: fixed;
+                bottom: 10px;
+                left: 10px;
+                background: rgba(0,0,0,0.7);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 15px;
+                font-size: 11px;
+                font-family: monospace;
+                z-index: 1000;
+                max-width: 300px;
+            `;
+            
+            debugInfo.innerHTML = `
+                📊 Stock System v2.0<br>
+                🕐 Loaded: ${deployTime}<br>
+                🔗 Sheets: ${DEFAULT_SHEETS_URL ? '✅ Set' : '❌ Not set'}<br>
+                🌐 Location: ${window.location.hostname}
+            `;
+            
+            document.body.appendChild(debugInfo);
+            
+            // Hide after 10 seconds
+            setTimeout(() => {
+                debugInfo.style.opacity = '0.3';
+            }, 10000);
+        }
+        
+        // Debug function untuk troubleshooting
+        function debugInfo() {
+            console.log('=== DEBUG INFO ===');
+            console.log('DEFAULT_SHEETS_URL:', DEFAULT_SHEETS_URL);
+            console.log('Current URL:', window.location.href);
+            console.log('Is connected:', isConnected);
+            console.log('Data count:', allData.length);
+            console.log('Filtered count:', filteredData.length);
+            
+            return {
+                defaultUrl: DEFAULT_SHEETS_URL,
+                connected: isConnected,
+                dataCount: allData.length,
+                filteredCount: filteredData.length
+            };
+        }
+        
+        // Expose debug function globally
+        window.debugStockSystem = debugInfo;
+
         // Initialize with default URL or URL params
         window.addEventListener('load', function() {
+            console.log('🚀 System initializing...');
+            console.log('🔗 DEFAULT_SHEETS_URL:', DEFAULT_SHEETS_URL);
+            
             const urlParams = new URLSearchParams(window.location.search);
             const sheetsParam = urlParams.get('sheets');
             
             if (sheetsParam) {
                 // Load dari URL parameter
+                console.log('📎 Using URL parameter');
                 sheetsUrl = decodeURIComponent(sheetsParam);
                 document.getElementById('setupMessage').style.display = 'none';
                 document.getElementById('connectionStatus').style.display = 'flex';
-                showMessage('Menggunakan URL dari parameter. Menghubungkan...', 'info');
+                showMessage('🔗 Menggunakan URL dari parameter. Menghubungkan...', 'info');
                 setTimeout(() => loadDataFromSheets(), 1000);
                 
-            } else if (DEFAULT_SHEETS_URL) {
+            } else if (DEFAULT_SHEETS_URL && DEFAULT_SHEETS_URL.trim()) {
                 // Auto-load dari default URL
+                console.log('⚙️ Using default URL');
                 document.getElementById('setupMessage').style.display = 'none';
                 document.getElementById('connectionStatus').style.display = 'flex';
-                showMessage('Memuat data dari Google Sheets...', 'info');
+                showMessage('📊 Memuat data dari Google Sheets...', 'info');
                 setTimeout(() => connectToSheets(), 1000);
                 
             } else {
                 // Tampilkan pesan setup jika belum dikonfigurasi
+                console.log('❌ No URL configured');
                 showMessage(`
-                    <strong>📋 Petunjuk untuk Developer:</strong><br><br>
+                    📋 <strong>Petunjuk untuk Developer:</strong><br><br>
                     
                     1. Edit file <code>index.html</code> di repository GitHub<br>
                     2. Cari baris: <code>const DEFAULT_SHEETS_URL = '';</code><br>
@@ -1103,3 +1092,6 @@ Tips: Akses https://cors-anywhere.herokuapp.com/corsdemo untuk aktivasi CORS pro
             // Add deployment info
             addDeploymentInfo();
         });
+    </script>
+</body>
+</html>
