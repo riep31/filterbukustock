@@ -1,4 +1,60 @@
-<!DOCTYPE html>
+// Add deployment and debug info
+        function addDeploymentInfo() {
+            const now = new Date();
+            const deployTime = now.toLocaleString('id-ID');
+            
+            // Add debug info to footer
+            const debugInfo = document.createElement('div');
+            debugInfo.style.cssText = `
+                position: fixed;
+                bottom: 10px;
+                left: 10px;
+                background: rgba(0,0,0,0.7);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 15px;
+                font-size: 11px;
+                font-family: monospace;
+                z-index: 1000;
+                max-width: 300px;
+            `;
+            
+            debugInfo.innerHTML = `
+                📊 Stock System v2.0<br>
+                🕐 Loaded: ${deployTime}<br>
+                🔗 Sheets: ${DEFAULT_SHEETS_URL ? '✅ Set' : '❌ Not set'}<br>
+                🌐 Location: ${window.location.hostname}
+            `;
+            
+            document.body.appendChild(debugInfo);
+            
+            // Hide after 10 seconds
+            setTimeout(() => {
+                debugInfo.style.opacity = '0.3';
+            }, 10000);
+        }
+        
+        // Debug function untuk troubleshooting
+        function debugInfo() {
+            console.log('=== DEBUG INFO ===');
+            console.log('DEFAULT_SHEETS_URL:', DEFAULT_SHEETS_URL);
+            console.log('AUTO_HIDE_CONFIG:', AUTO_HIDE_CONFIG);
+            console.log('Current URL:', window.location.href);
+            console.log('Is connected:', isConnected);
+            console.log('Data count:', allData.length);
+            console.log('Filtered count:', filteredData.length);
+            
+            return {
+                defaultUrl: DEFAULT_SHEETS_URL,
+                autoHide: AUTO_HIDE_CONFIG,
+                connected: isConnected,
+                dataCount: allData.length,
+                filteredCount: filteredData.length
+            };
+        }
+        
+        // Expose debug function globally
+        window.debugStockSystem = debugInfo;<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -48,12 +104,45 @@
 
         .config-section {
             padding: 30px;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.9);
             border-bottom: 1px solid #e0e0e0;
+            text-align: center;
         }
 
         .config-section.hidden {
             display: none;
+        }
+
+        .setup-message {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .setup-message h3 {
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .setup-message code {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .connection-status {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 15px;
+            margin-bottom: 20px;
         }
 
         .search-section {
@@ -430,31 +519,29 @@
         
         <!-- Configuration Section -->
         <div class="config-section" id="configSection">
-            <div class="config-help">
-                <h3>🔧 Setup Google Sheets Integration</h3>
-                <ol>
-                    <li>Buka Google Sheets Anda</li>
-                    <li>Klik <strong>File > Share > Publish to web</strong></li>
-                    <li>Pilih <strong>Entire Document</strong> dan format <strong>CSV</strong></li>
-                    <li>Klik <strong>Publish</strong> dan copy link yang diberikan</li>
-                    <li>Paste link tersebut di field <strong>Google Sheets CSV URL</strong> di bawah ini</li>
-                </ol>
+            <div id="setupMessage" class="setup-message">
+                <h3>⚙️ Setup Required</h3>
+                <p>
+                    Sistem belum dikonfigurasi untuk Google Sheets.<br>
+                    Developer perlu mengatur <code>DEFAULT_SHEETS_URL</code> di kode HTML.
+                </p>
+                <br>
+                <p><strong>Langkah setup:</strong></p>
+                <p>
+                    1. Edit file <code>index.html</code> di repository<br>
+                    2. Cari baris: <code>const DEFAULT_SHEETS_URL = '';</code><br>
+                    3. Ganti dengan URL Google Sheets CSV Anda<br>
+                    4. Commit changes
+                </p>
             </div>
             
-            <div class="form-group">
-                <label for="sheetsUrl">🔗 Google Sheets CSV URL</label>
-                <input 
-                    type="url" 
-                    id="sheetsUrl" 
-                    placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv&gid=0"
-                    value="">
-            </div>
-            
-            <div class="buttons">
-                <button class="btn btn-connect" onclick="connectToSheets()">🔗 Hubungkan ke Google Sheets</button>
-                <div id="connectionStatus" class="status-indicator status-disconnected">
-                    <span>●</span> Belum Terhubung
+            <div id="connectionStatus" class="connection-status" style="display: none;">
+                <div class="status-indicator status-disconnected" id="statusIndicator">
+                    <span>●</span> Menghubungkan ke Google Sheets...
                 </div>
+                <button class="btn btn-connect" onclick="retryConnection()" id="retryBtn" style="display: none;">
+                    🔄 Coba Lagi
+                </button>
             </div>
             
             <div id="messageContainer"></div>
@@ -539,36 +626,34 @@
 
         // Configuration
         function connectToSheets() {
-            const url = document.getElementById('sheetsUrl').value.trim();
-            if (!url) {
-                showMessage('Silakan masukkan URL Google Sheets!', 'error');
+            if (!DEFAULT_SHEETS_URL) {
+                showMessage('DEFAULT_SHEETS_URL belum dikonfigurasi. Silakan edit kode HTML.', 'error');
                 return;
             }
-
-            if (!url.includes('docs.google.com/spreadsheets')) {
-                showMessage('URL harus berupa link Google Sheets yang valid!', 'error');
-                return;
-            }
-
-            // Convert sharing URL to CSV export URL if needed
-            let csvUrl = url;
-            if (url.includes('/edit#gid=') || url.includes('/edit?usp=')) {
-                const spreadsheetId = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-                const gidMatch = url.match(/[#&]gid=([0-9]+)/);
-                const gid = gidMatch ? gidMatch[1] : '0';
-                
-                if (spreadsheetId) {
-                    csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId[1]}/export?format=csv&gid=${gid}`;
-                }
-            }
-
-            sheetsUrl = csvUrl;
+            
+            sheetsUrl = DEFAULT_SHEETS_URL;
             loadDataFromSheets();
         }
 
-        // Default Google Sheets URL - GANTI DENGAN URL SHEETS ANDA
-        const DEFAULT_SHEETS_URL = ' https://docs.google.com/spreadsheets/d/2PACX-1vTOViOi6H-pEujdwYvV9XHIpqMNbtrjEayK5Ri6uPNN31XJ6UVnhAlKb9vxyw2z4iebB3KbqyMNLV0Z/export?format=csv&gid=0';
-        // Contoh: 'https://docs.google.com/spreadsheets/d/1ABC123.../export?format=csv&gid=0'
+        function retryConnection() {
+            if (DEFAULT_SHEETS_URL) {
+                connectToSheets();
+            }
+        }
+
+        // ========================================
+        // 🔧 KONFIGURASI GOOGLE SHEETS
+        // ========================================
+        // GANTI URL DI BAWAH INI DENGAN URL GOOGLE SHEETS ANDA
+        // Format: https://docs.google.com/spreadsheets/d/SHEET_ID/export?format=csv&gid=0
+        
+        const DEFAULT_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/2PACX-1vTOViOi6H-pEujdwYvV9XHIpqMNbtrjEayK5Ri6uPNN31XJ6UVnhAlKb9vxyw2z4iebB3KbqyMNLV0Z/export?format=csv&gid=0';
+        
+        // Contoh:
+        // const DEFAULT_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/export?format=csv&gid=0';
+        
+        // Auto-load akan aktif jika DEFAULT_SHEETS_URL diisi
+        // ========================================
 
         async function loadDataFromSheets() {
             showLoading();
@@ -628,13 +713,15 @@
                 
             } catch (error) {
                 updateConnectionStatus('error');
+                document.getElementById('retryBtn').style.display = 'inline-block';
+                
                 showMessage(`Gagal terhubung: ${error.message}. 
 
 Solusi yang bisa dicoba:
 1. Pastikan Google Sheets sudah di-publish ke web dalam format CSV
 2. Pastikan sheet dapat diakses publik  
-3. Coba refresh halaman (beberapa CORS proxy memiliki limit)
-4. Jika masih error, coba ganti URL proxy di kode
+3. Coba klik tombol "Coba Lagi"
+4. Cek browser console (F12) untuk error detail
 
 Tips: Akses https://cors-anywhere.herokuapp.com/corsdemo untuk aktivasi CORS proxy`, 'error');
                 console.error('Error loading data:', error);
@@ -894,23 +981,25 @@ Tips: Akses https://cors-anywhere.herokuapp.com/corsdemo untuk aktivasi CORS pro
         }
 
         function updateConnectionStatus(status) {
-            const statusEl = document.getElementById('connectionStatus');
+            const statusEl = document.getElementById('statusIndicator');
             
             switch(status) {
                 case 'connected':
                     statusEl.className = 'status-indicator status-connected';
-                    statusEl.innerHTML = '<span>●</span> Terhubung';
+                    statusEl.innerHTML = '<span>●</span> Terhubung ke Google Sheets';
                     isConnected = true;
                     break;
                 case 'connecting':
                     statusEl.className = 'status-indicator';
                     statusEl.innerHTML = '<span>●</span> Menghubungkan...';
                     statusEl.style.color = '#f39c12';
+                    statusEl.style.background = 'rgba(243, 156, 18, 0.1)';
+                    document.getElementById('retryBtn').style.display = 'none';
                     break;
                 case 'error':
                 default:
                     statusEl.className = 'status-indicator status-disconnected';
-                    statusEl.innerHTML = '<span>●</span> Tidak Terhubung';
+                    statusEl.innerHTML = '<span>●</span> Gagal Terhubung';
                     isConnected = false;
             }
         }
@@ -980,20 +1069,37 @@ Tips: Akses https://cors-anywhere.herokuapp.com/corsdemo untuk aktivasi CORS pro
             
             if (sheetsParam) {
                 // Load dari URL parameter
-                document.getElementById('sheetsUrl').value = decodeURIComponent(sheetsParam);
-                connectToSheets();
+                sheetsUrl = decodeURIComponent(sheetsParam);
+                document.getElementById('setupMessage').style.display = 'none';
+                document.getElementById('connectionStatus').style.display = 'flex';
+                showMessage('Menggunakan URL dari parameter. Menghubungkan...', 'info');
+                setTimeout(() => loadDataFromSheets(), 1000);
+                
             } else if (DEFAULT_SHEETS_URL) {
-                // Load dari default URL yang sudah di-set
-                document.getElementById('sheetsUrl').value = DEFAULT_SHEETS_URL;
-                showMessage('Menggunakan URL Google Sheets default. Klik "Hubungkan ke Google Sheets" untuk memuat data.', 'info');
-            }
-            
-            // Tampilkan instruksi jika belum ada URL
-            if (!DEFAULT_SHEETS_URL && !sheetsParam) {
+                // Auto-load dari default URL
+                document.getElementById('setupMessage').style.display = 'none';
+                document.getElementById('connectionStatus').style.display = 'flex';
+                showMessage('Memuat data dari Google Sheets...', 'info');
+                setTimeout(() => connectToSheets(), 1000);
+                
+            } else {
+                // Tampilkan pesan setup jika belum dikonfigurasi
                 showMessage(`
-                    <strong>Selamat datang!</strong><br>
-                    Untuk memulai, masukkan URL Google Sheets Anda di field di atas.<br>
-                    Atau, developer dapat mengatur DEFAULT_SHEETS_URL di kode.
+                    <strong>📋 Petunjuk untuk Developer:</strong><br><br>
+                    
+                    1. Edit file <code>index.html</code> di repository GitHub<br>
+                    2. Cari baris: <code>const DEFAULT_SHEETS_URL = '';</code><br>
+                    3. Ganti dengan URL Google Sheets CSV Anda<br>
+                    4. Commit changes ke repository<br><br>
+                    
+                    <strong>Format URL yang dibutuhkan:</strong><br>
+                    <code>https://docs.google.com/spreadsheets/d/SHEET_ID/export?format=csv&gid=0</code><br><br>
+                    
+                    <strong>Cara mendapatkan URL:</strong><br>
+                    Google Sheets → File → Share → Publish to web → CSV format
                 `, 'info');
             }
+            
+            // Add deployment info
+            addDeploymentInfo();
         });
