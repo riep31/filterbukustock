@@ -1,1115 +1,397 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Pencarian Data Stok - Google Sheets Integration</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 1.1em;
-        }
-
-        .config-section {
-            padding: 30px;
-            background: rgba(255, 255, 255, 0.9);
-            border-bottom: 1px solid #e0e0e0;
-            text-align: center;
-        }
-
-        .config-section.hidden {
-            display: none;
-        }
-
-        .setup-message {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .setup-message h3 {
-            margin-bottom: 15px;
-            font-size: 1.5em;
-        }
-
-        .setup-message code {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-        }
-
-        .connection-status {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            padding: 20px;
-            background: rgba(52, 152, 219, 0.1);
-            border-radius: 15px;
-            margin-bottom: 20px;
-        }
-
-        .search-section {
-            padding: 30px;
-            background: rgba(255, 255, 255, 0.8);
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .search-controls {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            position: relative;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #2c3e50;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            background: white;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .buttons {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 15px 30px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .btn-search {
-            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-            color: white;
-        }
-
-        .btn-search:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(46, 204, 113, 0.3);
-        }
-
-        .btn-clear {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            color: white;
-        }
-
-        .btn-clear:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(231, 76, 60, 0.3);
-        }
-
-        .btn-connect {
-            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-            color: white;
-        }
-
-        .btn-connect:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(243, 156, 18, 0.3);
-        }
-
-        .status-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .status-connected {
-            background: rgba(46, 204, 113, 0.1);
-            color: #27ae60;
-        }
-
-        .status-disconnected {
-            background: rgba(231, 76, 60, 0.1);
-            color: #e74c3c;
-        }
-
-        .results-section {
-            padding: 30px;
-        }
-
-        .results-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding: 15px;
-            background: rgba(52, 152, 219, 0.1);
-            border-radius: 10px;
-        }
-
-        .results-count {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .pagination-controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .pagination-info {
-            font-size: 14px;
-            color: #666;
-        }
-
-        .virtual-table-container {
-            height: 600px;
-            overflow: auto;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            background: white;
-            position: relative;
-        }
-
-        .virtual-table {
-            position: relative;
-        }
-
-        .table-header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
-            display: grid;
-            grid-template-columns: 80px 2fr 1fr 1fr 1fr 1fr 2fr 1fr 1fr 1fr;
-            gap: 1px;
-        }
-
-        .header-cell {
-            color: white;
-            padding: 20px 15px;
-            font-weight: 600;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
-        }
-
-        .table-body {
-            position: relative;
-        }
-
-        .table-row {
-            display: grid;
-            grid-template-columns: 80px 2fr 1fr 1fr 1fr 1fr 2fr 1fr 1fr 1fr;
-            gap: 1px;
-            background: #f8f9fa;
-            transition: background-color 0.2s ease;
-        }
-
-        .table-row:hover {
-            background: rgba(52, 152, 219, 0.05);
-        }
-
-        .table-row:nth-child(even) {
-            background: rgba(0, 0, 0, 0.02);
-        }
-
-        .table-cell {
-            padding: 15px;
-            background: white;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .number-cell {
-            text-align: right;
-            font-weight: 600;
-            font-family: 'Courier New', monospace;
-        }
-
-        .date-cell {
-            font-family: 'Courier New', monospace;
-            color: #666;
-        }
-
-        .no-data {
-            text-align: center;
-            padding: 60px 20px;
-            color: #7f8c8d;
-            font-size: 18px;
-        }
-
-        .no-data-icon {
-            font-size: 4em;
-            margin-bottom: 20px;
-            opacity: 0.3;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #3498db;
-            font-size: 18px;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .highlight {
-            background-color: #fff3cd;
-            padding: 2px 4px;
-            border-radius: 3px;
-        }
-
-        .error-message {
-            background: rgba(231, 76, 60, 0.1);
-            color: #e74c3c;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
-            border-left: 4px solid #e74c3c;
-        }
-
-        .info-message {
-            background: rgba(52, 152, 219, 0.1);
-            color: #2980b9;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
-            border-left: 4px solid #3498db;
-        }
-
-        .success-message {
-            background: rgba(46, 204, 113, 0.1);
-            color: #27ae60;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
-            border-left: 4px solid #2ecc71;
-        }
-
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2em;
-            }
-            
-            .search-controls {
-                grid-template-columns: 1fr;
-            }
-            
-            .buttons {
-                justify-content: center;
-            }
-            
-            .results-info {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
-            }
-            
-            .pagination-controls {
-                justify-content: center;
-            }
-            
-            .virtual-table-container {
-                height: 500px;
-            }
-            
-            .table-header,
-            .table-row {
-                grid-template-columns: 60px repeat(9, minmax(120px, 1fr));
-                font-size: 14px;
-            }
-            
-            .header-cell,
-            .table-cell {
-                padding: 10px 8px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Card Stock FG</title>
+  <style>
+    body { 
+      font-family: "Inter", "Segoe UI", system-ui, sans-serif; margin: 0; 
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
+      color: #374151; min-height: 100vh;
+    }
+    header {
+      display: flex; align-items: center; 
+      background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%); 
+      color: white; padding: 24px 32px; border-bottom: 3px solid #718096;
+    }
+    header img { 
+      height: 56px; margin-right: 20px; border-radius: 12px; 
+      background: white; padding: 8px; border: 2px solid #e2e8f0;
+    }
+    header h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+    header p { margin: 4px 0 0; font-size: 14px; opacity: 0.85; font-weight: 400; }
+    main { padding: 32px; max-width: 1400px; margin: 0 auto; }
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 24px;
+      background: #ffffff; padding: 20px 24px; border-radius: 16px; 
+      border: 2px solid #e5e7eb;
+    }
+    label { font-size: 14px; font-weight: 600; color: #374151; }
+    select, input, button { 
+      padding: 12px 16px; border: 2px solid #d1d5db; border-radius: 12px; 
+      font-size: 14px; font-weight: 500; transition: all 0.2s ease;
+      background: white;
+    }
+    select:focus, input:focus { 
+      outline: none; border-color: #6b7280; background: #f9fafb; 
+    }
+    button { 
+      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); 
+      color: white; border: 2px solid #6b7280; cursor: pointer; 
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    button:hover { 
+      background: linear-gradient(135deg, #4b5563 0%, #374151 100%); 
+      border-color: #4b5563; transform: translateY(-2px);
+    }
+    button:active { transform: translateY(0); }
+    table { 
+      border-collapse: collapse; width: 100%; margin-top: 24px; 
+      background: #ffffff; border-radius: 16px; overflow: hidden; 
+      border: 3px solid #e5e7eb;
+    }
+    th, td { 
+      padding: 16px 20px; text-align: left; border-bottom: 1px solid #f3f4f6;
+      font-size: 14px; line-height: 1.5;
+    }
+    th { 
+      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); 
+      color: white; font-weight: 700; text-transform: uppercase; 
+      font-size: 12px; letter-spacing: 1px; position: sticky; top: 0; z-index: 10;
+    }
+    td { background: white; }
+    tr:hover td { 
+      background: #f8fafc; transition: all 0.2s ease;
+    }
+    tr:nth-child(even) td { background: #fafbfc; }
+    tr:nth-child(even):hover td { background: #f1f5f9; }
+    
+    /* Sembunyikan kolom A */
+    th:first-child, td:first-child { display: none; }
+    
+    /* Styling khusus untuk kolom angka */
+    td:nth-child(8), td:nth-child(9), td:last-child { 
+      text-align: right; font-family: 'SF Mono', 'Monaco', 'Consolas', monospace; 
+      font-weight: 600; font-size: 13px;
+    }
+    
+    /* Styling untuk saldo positif/negatif */
+    td:last-child { 
+      font-weight: 700; font-size: 14px;
+    }
+    .saldo-positive { color: #059669; background: #ecfdf5; }
+    .saldo-negative { color: #dc2626; background: #fef2f2; }
+    
+    /* Loading animation */
+    .loading-dots {
+      display: inline-block; animation: loading 1.4s infinite;
+    }
+    @keyframes loading {
+      0%, 80%, 100% { opacity: 0.3; }
+      40% { opacity: 1; }
+    }
+    #subtitle { 
+      margin: 16px 0; font-size: 15px; color: #6b7280; font-weight: 500;
+      background: white; padding: 12px 16px; border-radius: 12px; 
+      border: 2px solid #e5e7eb; display: inline-block;
+    }
+    #loading { 
+      margin: 24px 0; font-size: 16px; color: #6b7280; 
+      display: flex; align-items: center; gap: 12px; font-weight: 600;
+    }
+    .pagination { 
+      margin-top: 32px; display: flex; gap: 12px; flex-wrap: wrap; 
+      justify-content: center; align-items: center; background: white;
+      padding: 20px; border-radius: 16px; border: 2px solid #e5e7eb;
+    }
+    .pagination button {
+      padding: 12px 18px; border: 2px solid #d1d5db; border-radius: 12px; 
+      background: white; cursor: pointer; font-weight: 600; font-size: 14px;
+      transition: all 0.3s ease; color: #374151;
+    }
+    .pagination button:hover:not(:disabled) { 
+      background: #f3f4f6; border-color: #9ca3af; transform: translateY(-2px);
+    }
+    .pagination button.active { 
+      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); 
+      color: white; border-color: #6b7280;
+    }
+    .pagination button:disabled { 
+      background: #f9fafb; color: #d1d5db; cursor: not-allowed; 
+      border-color: #e5e7eb;
+    }
+    .pagination span { 
+      padding: 12px 16px; color: #6b7280; font-weight: 600; 
+      background: #f9fafb; border-radius: 12px; border: 2px solid #e5e7eb;
+    }
+    @media print { 
+      .no-print { display: none !important; } 
+      body { margin: 8mm; background: white !important; }
+      table { border: 2px solid #374151 !important; }
+      th { background: #6b7280 !important; }
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      main { padding: 16px; }
+      header { padding: 16px 20px; }
+      header h1 { font-size: 22px; }
+      .toolbar { padding: 16px; gap: 12px; }
+      th, td { padding: 12px 8px; font-size: 13px; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📊 Sistem Pencarian Data Stok</h1>
-            <p>Terhubung langsung dengan Google Sheets</p>
-        </div>
-        
-        <!-- Configuration Section -->
-        <div class="config-section" id="configSection">
-            <div id="setupMessage" class="setup-message">
-                <h3>⚙️ Setup Required</h3>
-                <p>
-                    Sistem belum dikonfigurasi untuk Google Sheets.<br>
-                    Developer perlu mengatur <code>DEFAULT_SHEETS_URL</code> di kode HTML.
-                </p>
-                <br>
-                <p><strong>Langkah setup:</strong></p>
-                <p>
-                    1. Edit file <code>index.html</code> di repository<br>
-                    2. Cari baris: <code>const DEFAULT_SHEETS_URL = '';</code><br>
-                    3. Ganti dengan URL Google Sheets CSV Anda<br>
-                    4. Commit changes
-                </p>
-            </div>
-            
-            <div id="connectionStatus" class="connection-status" style="display: none;">
-                <div class="status-indicator status-disconnected" id="statusIndicator">
-                    <span>●</span> Menghubungkan ke Google Sheets...
-                </div>
-                <button class="btn btn-connect" onclick="retryConnection()" id="retryBtn" style="display: none;">
-                    🔄 Coba Lagi
-                </button>
-            </div>
-            
-            <div id="messageContainer"></div>
-        </div>
-        
-        <!-- Search Section -->
-        <div class="search-section">
-            <div class="search-controls">
-                <div class="form-group">
-                    <label for="searchItem">🔍 Cari Deskripsi Item</label>
-                    <input type="text" id="searchItem" placeholder="Masukkan nama item...">
-                </div>
-                <div class="form-group">
-                    <label for="dateFrom">📅 Tanggal Dari</label>
-                    <input type="date" id="dateFrom">
-                </div>
-                <div class="form-group">
-                    <label for="dateTo">📅 Tanggal Sampai</label>
-                    <input type="date" id="dateTo">
-                </div>
-                <div class="form-group">
-                    <label for="pageSize">📄 Items per Halaman</label>
-                    <select id="pageSize" onchange="changePageSize()">
-                        <option value="50">50</option>
-                        <option value="100" selected>100</option>
-                        <option value="200">200</option>
-                        <option value="500">500</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="buttons">
-                <button class="btn btn-search" onclick="searchData()" id="searchBtn" disabled>🔍 Cari Data</button>
-                <button class="btn btn-clear" onclick="clearFilters()" id="clearBtn" disabled>🗑️ Reset Filter</button>
-            </div>
-        </div>
-        
-        <!-- Results Section -->
-        <div class="results-section">
-            <div class="results-info">
-                <div class="results-count" id="resultsCount">Hubungkan ke Google Sheets terlebih dahulu</div>
-                <div class="pagination-controls">
-                    <button class="btn" onclick="previousPage()" id="prevBtn" disabled>⬅️ Prev</button>
-                    <span class="pagination-info" id="paginationInfo">-</span>
-                    <button class="btn" onclick="nextPage()" id="nextBtn" disabled>Next ➡️</button>
-                </div>
-            </div>
-            
-            <div class="virtual-table-container" id="tableContainer">
-                <div class="virtual-table">
-                    <div class="table-header">
-                        <div class="header-cell">No</div>
-                        <div class="header-cell">Deskripsi Item</div>
-                        <div class="header-cell">Tanggal</div>
-                        <div class="header-cell">No. Sumber</div>
-                        <div class="header-cell">Tipe</div>
-                        <div class="header-cell">Kode Prod</div>
-                        <div class="header-cell">Keterangan</div>
-                        <div class="header-cell">Kts Masuk</div>
-                        <div class="header-cell">Kts Keluar</div>
-                        <div class="header-cell">Saldo Akhir</div>
-                    </div>
-                    <div class="table-body" id="tableBody">
-                        <div class="no-data">
-                            <div class="no-data-icon">🔗</div>
-                            <div>Hubungkan ke Google Sheets untuk melihat data</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <header>
+    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRYyanHkNjy-MEGWx-yRWA8XiFF9HbWiLoGFY9HRkEpuBXKYGjxU_TMW2dK4ONcqKA4tg&usqp=CAU"" alt="Logo">
+    <div>
+      <h1>Card Stock Finish Goods</h1>
+      <p>Pt Dagsap Endura Eatore</p>
+    </div>
+  </header>
+
+  <main>
+    <div class="no-print toolbar">
+      <label for="desc">Deskripsi Item:</label>
+      <select id="desc"><option value="">-- Pilih Deskripsi --</option></select>
+
+      <label for="tglAwal">Tanggal Dari:</label>
+      <input type="date" id="tglAwal">
+
+      <label for="tglAkhir">Sampai:</label>
+      <input type="date" id="tglAkhir">
+
+      <button id="btnFilter">Filter</button>
+      <button id="btnPrint">Print</button>
+      <button id="btnPDF">Download PDF</button>
+      <button id="btnExcel">Export Excel</button>
     </div>
 
-    <script>
-        // ========================================
-        // 🔧 KONFIGURASI GOOGLE SHEETS
-        // ========================================
-        // GANTI URL DI BAWAH INI DENGAN URL GOOGLE SHEETS ANDA
-        const DEFAULT_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/1AwPzVONLkr-GXigtHBGPPXE8XwZdwPXw69g7XSp5FdY/export?format=csv&gid=0';
-        
-        // Global variables
-        let allData = [];
-        let filteredData = [];
-        let currentPage = 1;
-        let pageSize = 100;
-        let totalPages = 0;
-        let isConnected = false;
-        let sheetsUrl = '';
+    <h2 style="color: #374151; font-size: 24px; font-weight: 700; margin: 0 0 8px 0;">Card Stock Finish Goods</h2>
+    <p id="subtitle">Silakan pilih filter untuk menampilkan data.</p>
+    <div id="loading"></div>
+    <table id="dataTable"></table>
+    <div id="pagination" class="pagination"></div>
+  </main>
 
-        // Configuration
-        function connectToSheets() {
-            if (!DEFAULT_SHEETS_URL) {
-                showMessage('DEFAULT_SHEETS_URL belum dikonfigurasi. Silakan edit kode HTML.', 'error');
-                return;
-            }
-            
-            sheetsUrl = DEFAULT_SHEETS_URL;
-            loadDataFromSheets();
-        }
+  <!-- html2pdf.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- SheetJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-        function retryConnection() {
-            if (DEFAULT_SHEETS_URL) {
-                connectToSheets();
-            }
-        }
+  <script>
+    const sheetID = "1AwPzVONLkr-GXigtHBGPPXE8XwZdwPXw69g7XSp5FdY";
+    const sheetGID = "2088069833";
+    const sheetURL = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?gid=${sheetGID}`;
 
-        async function loadDataFromSheets() {
-            showLoading();
-            updateConnectionStatus('connecting');
-            
-            try {
-                console.log('🔗 Mencoba koneksi ke:', sheetsUrl);
-                
-                // Coba langsung tanpa proxy dulu
-                let response;
-                let csvText;
-                
-                try {
-                    console.log('📡 Mencoba akses langsung...');
-                    response = await fetch(sheetsUrl);
-                    
-                    if (response.ok) {
-                        csvText = await response.text();
-                        console.log('✅ Berhasil akses langsung');
-                    } else {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-                } catch (directError) {
-                    console.log('❌ Akses langsung gagal, mencoba dengan proxy...');
-                    
-                    // Gunakan proxy jika akses langsung gagal
-                    const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(sheetsUrl);
-                    response = await fetch(proxyUrl);
-                    
-                    if (!response.ok) {
-                        throw new Error(`Proxy request failed: ${response.status} ${response.statusText}`);
-                    }
-                    
-                    csvText = await response.text();
-                    console.log('✅ Berhasil dengan proxy');
-                }
-                
-                console.log('📊 Data received, length:', csvText.length);
-                console.log('📄 First 200 chars:', csvText.substring(0, 200));
-                
-                if (!csvText || csvText.trim().length === 0) {
-                    throw new Error('Data CSV kosong atau tidak valid');
-                }
-                
-                const parsedData = parseCSV(csvText);
-                console.log('🔢 Parsed records:', parsedData.length);
-                
-                if (parsedData.length === 0) {
-                    throw new Error('Tidak ada data valid yang dapat diparsing dari CSV');
-                }
+    const descSelect   = document.getElementById("desc");
+    const tglAwalInput = document.getElementById("tglAwal");
+    const tglAkhirInput= document.getElementById("tglAkhir");
+    const dataTable    = document.getElementById("dataTable");
+    const btnFilter    = document.getElementById("btnFilter");
+    const btnPrint     = document.getElementById("btnPrint");
+    const btnPDF       = document.getElementById("btnPDF");
+    const btnExcel     = document.getElementById("btnExcel");
+    const subtitle     = document.getElementById("subtitle");
+    const loadingText  = document.getElementById("loading");
+    const pagination   = document.getElementById("pagination");
 
-                allData = parsedData;
-                filteredData = [...allData];
-                
-                updateConnectionStatus('connected');
-                enableControls();
-                updatePagination();
-                displayCurrentPage();
-                
-                showMessage(`✅ Berhasil terhubung! ${allData.length} record dimuat.`, 'success');
-                hideConfigSection();
-                
-            } catch (error) {
-                console.error('❌ Error loading data:', error);
-                updateConnectionStatus('error');
-                document.getElementById('retryBtn').style.display = 'inline-block';
-                
-                let errorMsg = `❌ Gagal terhubung: ${error.message}\n\n`;
-                errorMsg += `🔧 Solusi yang bisa dicoba:\n`;
-                errorMsg += `1. Pastikan URL Google Sheets benar\n`;
-                errorMsg += `2. Pastikan sheet dapat diakses publik\n`;
-                errorMsg += `3. Pastikan format export adalah CSV\n`;
-                errorMsg += `4. Coba refresh halaman\n`;
-                errorMsg += `5. Cek browser console (F12) untuk detail error`;
-                
-                showMessage(errorMsg, 'error');
-            }
-        }
+    let fullData = []; // semua baris hasil filter
+    let tableColumns = []; // simpan kolom header
+    let pageSize = 50;
+    let currentPage = 1;
 
-        function parseCSV(csvText) {
-            try {
-                const lines = csvText.split('\n').filter(line => line.trim());
-                console.log('📏 Total lines:', lines.length);
-                
-                if (lines.length < 2) {
-                    throw new Error('CSV harus memiliki minimal header dan 1 data row');
-                }
-                
-                const data = [];
-                let cumulativeSaldo = 0; // Saldo kumulatif mulai dari 0
-                
-                // Skip header row (index 0)
-                for (let i = 1; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (!line) continue;
-                    
-                    const columns = parseCSVLine(line);
-                    
-                    if (columns.length >= 8) { // Sekarang minimal 8 kolom (tanpa saldo akhir dari CSV)
-                        const ktsMasuk = parseFloat(columns[6]) || 0;
-                        const ktsKeluar = parseFloat(columns[7]) || 0;
-                        
-                        // Hitung saldo akhir: saldo sebelumnya + masuk - keluar
-                        cumulativeSaldo = cumulativeSaldo + ktsMasuk - ktsKeluar;
-                        
-                        const row = {
-                            id7: columns[0] || '', // ID7 dari Google Sheets
-                            deskripsi: columns[1] || '',
-                            tanggal: columns[2] || '',
-                            noSumber: columns[3] || '',
-                            tipe: columns[4] || '',
-                            kodeProd: columns[5] || '',
-                            keterangan: columns[6] || '',
-                            ktsMasuk: ktsMasuk,
-                            ktsKeluar: ktsKeluar,
-                            saldoAkhir: cumulativeSaldo // Saldo kumulatif yang dihitung
-                        };
-                        
-                        data.push(row);
-                    } else {
-                        console.warn(`⚠️ Row ${i} has insufficient columns (${columns.length}):`, columns);
-                    }
-                }
-                
-                console.log('✅ Successfully parsed', data.length, 'records');
-                
-                // Log sample data
-                if (data.length > 0) {
-                    console.log('📝 Sample record:', data[0]);
-                }
-                
-                return data;
-                
-            } catch (error) {
-                console.error('❌ CSV Parsing error:', error);
-                throw new Error(`CSV parsing failed: ${error.message}`);
-            }
-        }
+    function updateSubtitle(desc, tglAwal, tglAkhir) {
+      const d = desc || "Semua Deskripsi";
+      const t1 = tglAwal ? new Date(tglAwal).toLocaleDateString("id-ID") : "awal";
+      const t2 = tglAkhir ? new Date(tglAkhir).toLocaleDateString("id-ID") : "akhir";
+      subtitle.textContent = `Filter: ${d} · Periode: ${t1} s/d ${t2} · Dibuat: ${new Date().toLocaleString("id-ID")}`;
+    }
 
-        function parseCSVLine(line) {
-            const result = [];
-            let current = '';
-            let inQuotes = false;
-            
-            for (let i = 0; i < line.length; i++) {
-                const char = line[i];
-                
-                if (char === '"') {
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    result.push(current.trim());
-                    current = '';
-                } else {
-                    current += char;
-                }
-            }
-            
-            result.push(current.trim());
-            return result.map(col => col.replace(/^"|"$/g, ''));
-        }
+    function loadDropdown() {
+      const query = encodeURIComponent("select B where B is not null");
+      const url = sheetURL + "&tq=" + query;
 
-        // Search and filter functions
-        function searchData() {
-            const searchTerm = document.getElementById('searchItem').value.toLowerCase();
-            const dateFrom = document.getElementById('dateFrom').value;
-            const dateTo = document.getElementById('dateTo').value;
+      fetch(url)
+        .then(res => res.text())
+        .then(rep => {
+          const json = JSON.parse(rep.substr(47).slice(0, -2));
+          const rows = json.table.rows;
+          const values = rows.map(r => r.c[0]?.v).filter(Boolean);
+          const uniqueVals = [...new Set(values)].sort();
 
-            showLoading();
-
-            setTimeout(() => {
-                filteredData = allData.filter(item => {
-                    // Filter by description
-                    const matchesDescription = !searchTerm || 
-                        item.deskripsi.toLowerCase().includes(searchTerm);
-
-                    // Filter by date range
-                    let matchesDate = true;
-                    if (dateFrom || dateTo) {
-                        const itemDate = new Date(item.tanggal);
-                        if (dateFrom && itemDate < new Date(dateFrom)) matchesDate = false;
-                        if (dateTo && itemDate > new Date(dateTo)) matchesDate = false;
-                    }
-
-                    return matchesDescription && matchesDate;
-                });
-
-                currentPage = 1;
-                updatePagination();
-                displayCurrentPage(searchTerm);
-            }, 300);
-        }
-
-        function clearFilters() {
-            document.getElementById('searchItem').value = '';
-            document.getElementById('dateFrom').value = '';
-            document.getElementById('dateTo').value = '';
-            
-            filteredData = [...allData];
-            currentPage = 1;
-            updatePagination();
-            displayCurrentPage();
-        }
-
-        // Pagination functions
-        function updatePagination() {
-            totalPages = Math.ceil(filteredData.length / pageSize);
-            
-            document.getElementById('resultsCount').textContent = 
-                `Menampilkan ${filteredData.length} dari ${allData.length} total data`;
-                
-            document.getElementById('paginationInfo').textContent = 
-                `Halaman ${currentPage} dari ${totalPages}`;
-            
-            document.getElementById('prevBtn').disabled = currentPage <= 1;
-            document.getElementById('nextBtn').disabled = currentPage >= totalPages;
-        }
-
-        function displayCurrentPage(highlightTerm = '') {
-            const startIndex = (currentPage - 1) * pageSize;
-            const endIndex = Math.min(startIndex + pageSize, filteredData.length);
-            const pageData = filteredData.slice(startIndex, endIndex);
-            
-            const tbody = document.getElementById('tableBody');
-            
-            if (pageData.length === 0) {
-                tbody.innerHTML = `
-                    <div class="no-data">
-                        <div class="no-data-icon">🔍</div>
-                        <div>Tidak ada data yang sesuai dengan kriteria pencarian</div>
-                    </div>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = pageData.map((item, index) => {
-                let deskripsi = item.deskripsi;
-                if (highlightTerm) {
-                    const regex = new RegExp(`(${highlightTerm})`, 'gi');
-                    deskripsi = deskripsi.replace(regex, '<span class="highlight">$1</span>');
-                }
-                
-                // Nomor urut berdasarkan halaman dan index
-                const nomorUrut = startIndex + index + 1;
-
-                return `
-                    <div class="table-row">
-                        <div class="table-cell number-cell">${nomorUrut}</div>
-                        <div class="table-cell">${deskripsi}</div>
-                        <div class="table-cell date-cell">${formatDate(item.tanggal)}</div>
-                        <div class="table-cell">${item.noSumber}</div>
-                        <div class="table-cell">
-                            <span style="padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; ${getTypeStyle(item.tipe)}">
-                                ${item.tipe}
-                            </span>
-                        </div>
-                        <div class="table-cell">
-                            <code style="background: #f8f9fa; padding: 2px 6px; border-radius: 4px;">${item.kodeProd}</code>
-                        </div>
-                        <div class="table-cell">${item.keterangan}</div>
-                        <div class="table-cell number-cell">${formatNumber(item.ktsMasuk)}</div>
-                        <div class="table-cell number-cell">${formatNumber(item.ktsKeluar)}</div>
-                        <div class="table-cell number-cell">
-                            <strong style="color: ${item.saldoAkhir >= 0 ? '#27ae60' : '#e74c3c'}">
-                                ${formatNumber(item.saldoAkhir)}
-                            </strong>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function previousPage() {
-            if (currentPage > 1) {
-                currentPage--;
-                updatePagination();
-                displayCurrentPage();
-                scrollToTop();
-            }
-        }
-
-        function nextPage() {
-            if (currentPage < totalPages) {
-                currentPage++;
-                updatePagination();
-                displayCurrentPage();
-                scrollToTop();
-            }
-        }
-
-        function changePageSize() {
-            pageSize = parseInt(document.getElementById('pageSize').value);
-            currentPage = 1;
-            updatePagination();
-            displayCurrentPage();
-        }
-
-        function scrollToTop() {
-            document.getElementById('tableContainer').scrollTop = 0;
-        }
-
-        // Utility functions
-        function getTypeStyle(type) {
-            const styles = {
-                'masuk': 'background-color: #d4edda; color: #155724;',
-                'keluar': 'background-color: #f8d7da; color: #721c24;',
-                'default': 'background-color: #e2e3e5; color: #383d41;'
-            };
-            return styles[type.toLowerCase()] || styles.default;
-        }
-
-        function formatDate(dateString) {
-            try {
-                const date = new Date(dateString);
-                return date.toLocaleDateString('id-ID', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                });
-            } catch {
-                return dateString;
-            }
-        }
-
-        function formatNumber(value) {
-            if (value === 0) return '0';
-            if (!value) return '-';
-            return parseFloat(value).toLocaleString('id-ID');
-        }
-
-        function showLoading() {
-            document.getElementById('tableBody').innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    Sedang memuat data...
-                </div>
-            `;
-        }
-
-        function showMessage(message, type = 'info') {
-            const container = document.getElementById('messageContainer');
-            let className = 'info-message';
-            
-            switch(type) {
-                case 'error':
-                    className = 'error-message';
-                    break;
-                case 'success':
-                    className = 'success-message';
-                    break;
-                default:
-                    className = 'info-message';
-            }
-            
-            container.innerHTML = `
-                <div class="${className}">
-                    ${message.replace(/\n/g, '<br>')}
-                </div>
-            `;
-            
-            // Auto-hide setelah beberapa detik
-            if (type === 'success') {
-                setTimeout(() => {
-                    container.innerHTML = '';
-                }, 5000);
-            } else if (type === 'info') {
-                setTimeout(() => {
-                    container.innerHTML = '';
-                }, 8000);
-            }
-            // Error messages tidak auto-hide
-        }
-
-        function updateConnectionStatus(status) {
-            const statusEl = document.getElementById('statusIndicator');
-            
-            switch(status) {
-                case 'connected':
-                    statusEl.className = 'status-indicator status-connected';
-                    statusEl.innerHTML = '<span>●</span> Terhubung ke Google Sheets';
-                    isConnected = true;
-                    break;
-                case 'connecting':
-                    statusEl.className = 'status-indicator';
-                    statusEl.innerHTML = '<span>●</span> Menghubungkan...';
-                    statusEl.style.color = '#f39c12';
-                    statusEl.style.background = 'rgba(243, 156, 18, 0.1)';
-                    document.getElementById('retryBtn').style.display = 'none';
-                    break;
-                case 'error':
-                default:
-                    statusEl.className = 'status-indicator status-disconnected';
-                    statusEl.innerHTML = '<span>●</span> Gagal Terhubung';
-                    isConnected = false;
-            }
-        }
-
-        function enableControls() {
-            document.getElementById('searchBtn').disabled = false;
-            document.getElementById('clearBtn').disabled = false;
-        }
-
-        function hideConfigSection() {
-            document.getElementById('configSection').classList.add('hidden');
-        }
-
-        // Event listeners
-        document.getElementById('searchItem').addEventListener('input', debounce(searchData, 500));
-        document.getElementById('dateFrom').addEventListener('change', searchData);
-        document.getElementById('dateTo').addEventListener('change', searchData);
-        document.getElementById('searchItem').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchData();
-            }
+          uniqueVals.forEach(val => {
+            const opt = document.createElement("option");
+            opt.value = val;
+            opt.textContent = val;
+            descSelect.appendChild(opt);
+          });
         });
+    }
 
-        // Keyboard shortcuts for pagination
-        document.addEventListener('keydown', function(e) {
-            if (!isConnected) return;
-            
-            if (e.ctrlKey || e.metaKey) {
-                switch(e.key) {
-                    case 'ArrowLeft':
-                        e.preventDefault();
-                        previousPage();
-                        break;
-                    case 'ArrowRight':
-                        e.preventDefault();
-                        nextPage();
-                        break;
-                }
-            }
+    function loadData() {
+      const desc = descSelect.value;
+      const tglAwal = tglAwalInput.value;
+      const tglAkhir = tglAkhirInput.value;
+
+      loadingText.innerHTML = "⏳ Sedang memuat data<span class='loading-dots'>...</span>";
+      dataTable.innerHTML = "";
+      pagination.innerHTML = "";
+
+      let whereClauses = [];
+      if (desc) whereClauses.push(`B='${desc}'`);
+      if (tglAwal) whereClauses.push(`C >= date '${tglAwal}'`);
+      if (tglAkhir) whereClauses.push(`C <= date '${tglAkhir}'`);
+      const whereSQL = whereClauses.length ? " where " + whereClauses.join(" and ") : "";
+
+      const query = encodeURIComponent(`select *${whereSQL} order by C asc`);
+      const url = sheetURL + "&tq=" + query;
+
+      fetch(url)
+        .then(res => res.text())
+        .then(rep => {
+          const json = JSON.parse(rep.substr(47).slice(0, -2));
+          const cols = json.table.cols;
+          const rows = json.table.rows;
+
+          if (!rows.length) {
+            dataTable.innerHTML = "<tr><td colspan='100%' style='text-align: center; color: #9ca3af; padding: 60px 20px; font-style: italic; font-size: 16px; background: #f9fafb;'>📊 Tidak ada data yang ditemukan untuk filter ini</td></tr>";
+            loadingText.textContent = "";
+            return;
+          }
+
+          // simpan kolom header untuk digunakan di pagination
+          tableColumns = cols;
+          
+          // simpan data dan hitung saldo
+          fullData = rows;
+          calculateSaldo();
+          
+          currentPage = 1;
+          renderTable();
+          renderPagination();
+          updateSubtitle(desc, tglAwal, tglAkhir);
+          loadingText.textContent = "";
         });
+    }
 
-        // Debounce function
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
+    function calculateSaldo() {
+      let saldo = 0;
+      fullData.forEach((r, idx) => {
+        const h = parseFloat(r.c[7]?.v || 0);
+        const i = parseFloat(r.c[8]?.v || 0);
+        saldo = (idx === 0) ? (h - i) : (saldo + (h - i));
+        r._saldo = saldo; // simpan saldo di row
+      });
+    }
 
-        // Auto-refresh data every 5 minutes
-        setInterval(() => {
-            if (isConnected && sheetsUrl) {
-                console.log('🔄 Auto-refreshing data...');
-                loadDataFromSheets();
-            }
-        }, 5 * 60 * 1000);
+    function renderTable() {
+      // Buat header tabel (skip kolom A)
+      let html = "<tr>";
+      tableColumns.forEach((c, index) => { 
+        if (index !== 0 && c.label) html += `<th>${c.label}</th>`; 
+      });
+      html += `<th>Saldo Akhir</th></tr>`;
 
-        // Debug functions
-        function addDeploymentInfo() {
-            const now = new Date();
-            const deployTime = now.toLocaleString('id-ID');
-            
-            // Add debug info to footer
-            const debugInfo = document.createElement('div');
-            debugInfo.style.cssText = `
-                position: fixed;
-                bottom: 10px;
-                left: 10px;
-                background: rgba(0,0,0,0.7);
-                color: white;
-                padding: 8px 12px;
-                border-radius: 15px;
-                font-size: 11px;
-                font-family: monospace;
-                z-index: 1000;
-                max-width: 300px;
-            `;
-            
-            debugInfo.innerHTML = `
-                📊 Stock System v2.0<br>
-                🕐 Loaded: ${deployTime}<br>
-                🔗 Sheets: ${DEFAULT_SHEETS_URL ? '✅ Set' : '❌ Not set'}<br>
-                🌐 Location: ${window.location.hostname}
-            `;
-            
-            document.body.appendChild(debugInfo);
-            
-            // Hide after 10 seconds
-            setTimeout(() => {
-                debugInfo.style.opacity = '0.3';
-            }, 10000);
-        }
-        
-        // Debug function untuk troubleshooting
-        function debugInfo() {
-            console.log('=== DEBUG INFO ===');
-            console.log('DEFAULT_SHEETS_URL:', DEFAULT_SHEETS_URL);
-            console.log('Current URL:', window.location.href);
-            console.log('Is connected:', isConnected);
-            console.log('Data count:', allData.length);
-            console.log('Filtered count:', filteredData.length);
-            
-            return {
-                defaultUrl: DEFAULT_SHEETS_URL,
-                connected: isConnected,
-                dataCount: allData.length,
-                filteredCount: filteredData.length
-            };
-        }
-        
-        // Expose debug function globally
-        window.debugStockSystem = debugInfo;
+      // Ambil data untuk halaman saat ini
+      const startIdx = (currentPage - 1) * pageSize;
+      const endIdx = startIdx + pageSize;
+      const pageRows = fullData.slice(startIdx, endIdx);
 
-        // Initialize with default URL or URL params
-        window.addEventListener('load', function() {
-            console.log('🚀 System initializing...');
-            console.log('🔗 DEFAULT_SHEETS_URL:', DEFAULT_SHEETS_URL);
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            const sheetsParam = urlParams.get('sheets');
-            
-            if (sheetsParam) {
-                // Load dari URL parameter
-                console.log('📎 Using URL parameter');
-                sheetsUrl = decodeURIComponent(sheetsParam);
-                document.getElementById('setupMessage').style.display = 'none';
-                document.getElementById('connectionStatus').style.display = 'flex';
-                showMessage('🔗 Menggunakan URL dari parameter. Menghubungkan...', 'info');
-                setTimeout(() => loadDataFromSheets(), 1000);
-                
-            } else if (DEFAULT_SHEETS_URL && DEFAULT_SHEETS_URL.trim()) {
-                // Auto-load dari default URL
-                console.log('⚙️ Using default URL');
-                document.getElementById('setupMessage').style.display = 'none';
-                document.getElementById('connectionStatus').style.display = 'flex';
-                showMessage('📊 Memuat data dari Google Sheets...', 'info');
-                setTimeout(() => connectToSheets(), 1000);
-                
-            } else {
-                // Tampilkan pesan setup jika belum dikonfigurasi
-                console.log('❌ No URL configured');
-                showMessage(`
-                    📋 <strong>Petunjuk untuk Developer:</strong><br><br>
-                    
-                    1. Edit file <code>index.html</code> di repository GitHub<br>
-                    2. Cari baris: <code>const DEFAULT_SHEETS_URL = '';</code><br>
-                    3. Ganti dengan URL Google Sheets CSV Anda<br>
-                    4. Commit changes ke repository<br><br>
-                    
-                    <strong>Format URL yang dibutuhkan:</strong><br>
-                    <code>https://docs.google.com/spreadsheets/d/SHEET_ID/export?format=csv&gid=0</code><br><br>
-                    
-                    <strong>Cara mendapatkan URL:</strong><br>
-                    Google Sheets → File → Share → Publish to web → CSV format
-                `, 'info');
-            }
-            
-            // Add deployment info
-            addDeploymentInfo();
+      // Render baris data
+      pageRows.forEach(r => {
+        html += "<tr>";
+        r.c.forEach((cell, index) => {
+          if (index !== 0) { // Skip kolom A
+            const value = cell?.f || cell?.v || "";
+            html += `<td>${value}</td>`;
+          }
         });
-    </script>
+        const saldoClass = r._saldo >= 0 ? 'saldo-positive' : 'saldo-negative';
+        html += `<td class="${saldoClass}">${Number(r._saldo).toLocaleString("id-ID")}</td>`;
+        html += "</tr>";
+      });
+
+      dataTable.innerHTML = html;
+    }
+
+    function renderPagination() {
+      pagination.innerHTML = "";
+      const totalPages = Math.ceil(fullData.length / pageSize);
+
+      if (totalPages <= 1) return; // Jangan tampilkan pagination jika hanya 1 halaman
+
+      // Info halaman
+      const infoSpan = document.createElement("span");
+      infoSpan.textContent = `Halaman ${currentPage} dari ${totalPages} (${fullData.length} data)`;
+      infoSpan.style.marginRight = "20px";
+      infoSpan.style.color = "#64748b";
+      infoSpan.style.fontSize = "14px";
+      pagination.appendChild(infoSpan);
+
+      const prevBtn = document.createElement("button");
+      prevBtn.textContent = "« Prev";
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.onclick = () => { 
+        currentPage--; 
+        renderTable(); 
+        renderPagination(); 
+      };
+      pagination.appendChild(prevBtn);
+
+      // Tampilkan nomor halaman
+      for (let i = 1; i <= totalPages; i++) {
+        if (i > 3 && i < totalPages - 2 && (i < currentPage - 1 || i > currentPage + 1)) {
+          if (i === currentPage - 2 || i === currentPage + 2) {
+            const dots = document.createElement("span");
+            dots.textContent = "...";
+            dots.style.padding = "6px 12px";
+            pagination.appendChild(dots);
+          }
+          continue;
+        }
+        const btn = document.createElement("button");
+        btn.textContent = i;
+        if (i === currentPage) btn.classList.add("active");
+        btn.onclick = () => { 
+          currentPage = i; 
+          renderTable(); 
+          renderPagination(); 
+        };
+        pagination.appendChild(btn);
+      }
+
+      const nextBtn = document.createElement("button");
+      nextBtn.textContent = "Next »";
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.onclick = () => { 
+        currentPage++; 
+        renderTable(); 
+        renderPagination(); 
+      };
+      pagination.appendChild(nextBtn);
+    }
+
+    btnFilter.addEventListener("click", loadData);
+    btnPrint.addEventListener("click", () => window.print());
+    btnPDF.addEventListener("click", () => {
+      const opt = {
+        margin: 10,
+        filename: `laporan-gsheet-${new Date().toISOString().slice(0,10)}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+      html2pdf().from(document.body).set(opt).save();
+    });
+    btnExcel.addEventListener("click", () => {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.table_to_sheet(document.getElementById("dataTable"));
+      XLSX.utils.book_append_sheet(wb, ws, "Laporan");
+      XLSX.writeFile(wb, `laporan-gsheet-${new Date().toISOString().slice(0,10)}.xlsx`);
+    });
+
+    loadDropdown();
+  </script>
 </body>
 </html>
